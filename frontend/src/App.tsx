@@ -3,6 +3,7 @@ import Login from "./pages/Login"
 import Dashboard from "./pages/Dashboard"
 import HomePage from "./pages/HomePage"
 import PatientPage from "./pages/Paciente"
+import PatientDashboard from "./pages/PacienteDashboard"
 
 function App() {
   return (
@@ -15,6 +16,7 @@ function App() {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/paciente/:id" element={<PatientPage />} />
           <Route path="/homepage" element={<HomePage />} />
+          <Route path="/paciente/dashboard" element={<PatientDashboard />} />
         </Routes>
       </BrowserRouter>
     </>
