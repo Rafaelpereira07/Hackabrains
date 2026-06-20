@@ -4,6 +4,8 @@ import Dashboard from "./pages/Dashboard"
 import HomePage from "./pages/HomePage"
 import PatientPage from "./pages/Paciente"
 import PatientDashboard from "./pages/PacienteDashboard"
+import PatientHistory from "./pages/Historico"
+import GenerateReport from "./pages/Relatorio"
 
 function App() {
   return (
@@ -16,6 +18,8 @@ function App() {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/paciente/:id" element={<PatientPage />} />
           <Route path="/homepage" element={<HomePage />} />
+          <Route path="/historico" element={<PatientHistory />} />
+          <Route path="/relatorio" element={<GenerateReport />} />
           <Route path="/paciente/dashboard" element={<PatientDashboard />} />
         </Routes>
       </BrowserRouter>
