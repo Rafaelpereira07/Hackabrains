@@ -9,8 +9,10 @@ import {
   Menu,
   X,
   HeartPulse,
-  Sparkles,
-  Download
+  Download,
+  Pill,
+  Clock,
+  Printer
 } from "lucide-react"
 
 // ── Dados Simulados do Paciente Logado ───────────────────────────────────────
@@ -19,10 +21,21 @@ const patientData = {
   name: "João Silva",
   age: 34,
   bloodType: "O+",
-  aiInsights: [
-    "Sua pressão arterial estável nas últimas consultas indica que a medicação atual está funcionando bem.",
-    "Lembrete: Beba pelo menos 2 litros de água hoje para manter a hidratação adequada.",
-    "O acompanhamento clínico do seu último exame está recomendado para os próximos 30 dias."
+  activeTreatments: [
+    {
+      id: "TRT-001",
+      medication: "Losartana 50mg",
+      dosage: "1 comprimido",
+      frequency: "A cada 12 horas",
+      duration: "Uso contínuo"
+    },
+    {
+      id: "TRT-002",
+      medication: "Vitamina D 10.000 UI",
+      dosage: "1 cápsula",
+      frequency: "1x por semana",
+      duration: "Por 8 semanas"
+    }
   ],
   recentReports: [
     { id: "R-5001", title: "Hemograma Completo", date: "02 Nov 2024", doctor: "Dr. Rafael" },
@@ -55,9 +68,17 @@ export default function PatientDashboard() {
           </div>
           <span className="font-bold text-gray-900">ClinIA</span>
         </div>
-        <button onClick={() => setSidebarOpen(!sidebarOpen)} className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg">
-          {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
-        </button>
+        <div className="flex items-center gap-3">
+          <button 
+            onClick={() => navigate('/relatorio-geral')}
+            className="p-2 text-emerald-600 hover:bg-emerald-50 rounded-lg"
+          >
+            <Printer size={20} />
+          </button>
+          <button onClick={() => setSidebarOpen(!sidebarOpen)} className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg">
+            {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
+          </button>
+        </div>
       </header>
 
       {/* Sidebar (Desktop & Mobile) */}
@@ -122,7 +143,14 @@ export default function PatientDashboard() {
       <main className="flex-1 p-4 md:p-8 max-w-5xl mx-auto w-full">
         
         {/* Top actions */}
-        <div className="hidden md:flex justify-end mb-8">
+        <div className="hidden md:flex justify-end items-center gap-4 mb-8">
+          <button 
+            onClick={() => navigate('/relatorio-geral')}
+            className="flex items-center gap-2 bg-white border border-emerald-600 text-emerald-700 hover:bg-emerald-50 px-4 py-2 rounded-lg font-medium transition-colors text-sm shadow-sm"
+          >
+            <Printer size={18} />
+            Gerar Relatório
+          </button>
           <button className="relative p-2 text-gray-400 hover:text-emerald-600 transition-colors bg-white rounded-full border border-gray-200 shadow-sm">
             <Bell size={20} />
             <span className="absolute top-0 right-0 w-2.5 h-2.5 bg-red-500 border-2 border-white rounded-full"></span>
@@ -140,26 +168,36 @@ export default function PatientDashboard() {
           {/* Coluna Principal (Esquerda) */}
           <div className="lg:col-span-2 space-y-6">
             
-            {/* AI Insights Card */}
-            <div className="bg-linear-to-br from-emerald-500 to-teal-600 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden">
-              <div className="absolute top-0 right-0 opacity-10 transform translate-x-4 -translate-y-4">
-                <HeartPulse size={120} />
+            {/* Active Treatments Card */}
+            <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="bg-emerald-50 p-2.5 rounded-xl text-emerald-600">
+                  <Pill size={24} />
+                </div>
+                <div>
+                  <h2 className="text-lg font-bold text-gray-900">Tratamentos Ativos</h2>
+                  <p className="text-sm text-gray-500">Suas medicações e terapias em andamento</p>
+                </div>
               </div>
-              <div className="relative z-10">
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="bg-white/20 p-2 rounded-lg backdrop-blur-sm">
-                    <Sparkles size={20} className="text-white" />
-                  </div>
-                  <h2 className="text-lg font-bold">Assistente de Saúde IA</h2>
-                </div>
-                <div className="space-y-3">
-                  {patientData.aiInsights.map((insight, index) => (
-                    <div key={index} className="flex gap-3 bg-white/10 p-3 rounded-xl backdrop-blur-sm">
-                      <div className="w-1.5 h-1.5 bg-white rounded-full mt-2 shrink-0"></div>
-                      <p className="text-sm leading-relaxed text-emerald-50 font-medium">{insight}</p>
+              
+              <div className="space-y-4">
+                {patientData.activeTreatments.map((treatment) => (
+                  <div key={treatment.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-gray-50 hover:bg-emerald-50/50 transition-colors rounded-xl border border-gray-100">
+                    <div className="mb-3 sm:mb-0">
+                      <p className="font-bold text-gray-900">{treatment.medication}</p>
+                      <div className="flex items-center gap-2 mt-1 text-sm text-gray-600">
+                        <span className="font-medium">{treatment.dosage}</span>
+                        <span className="text-gray-300">•</span>
+                        <span>{treatment.duration}</span>
+                      </div>
                     </div>
-                  ))}
-                </div>
+                    
+                    <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-lg border border-gray-200 shadow-sm">
+                      <Clock size={16} className="text-emerald-600" />
+                      <span className="text-sm font-medium text-gray-700">{treatment.frequency}</span>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
 
@@ -189,7 +227,10 @@ export default function PatientDashboard() {
                   </div>
                 ))}
               </div>
-              <button className="w-full mt-4 py-2 text-sm font-medium text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors">
+              <button 
+                onClick={() => navigate('/meu-historico')}
+                className="w-full mt-4 py-2 text-sm font-medium text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
+              >
                 Ver histórico completo
               </button>
             </div>
