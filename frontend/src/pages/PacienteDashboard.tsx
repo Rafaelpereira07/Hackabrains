@@ -141,7 +141,7 @@ export default function PatientDashboard() {
           <div className="lg:col-span-2 space-y-6">
             
             {/* AI Insights Card */}
-            <div className="bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden">
+            <div className="bg-linear-to-br from-emerald-500 to-teal-600 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden">
               <div className="absolute top-0 right-0 opacity-10 transform translate-x-4 -translate-y-4">
                 <HeartPulse size={120} />
               </div>
