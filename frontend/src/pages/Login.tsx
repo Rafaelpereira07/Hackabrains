@@ -1,6 +1,7 @@
 import { HeartPulse, Lock, Mail } from "lucide-react"
 import { useForm } from "react-hook-form"
 import { useNavigate } from "react-router-dom"
+import { authService, setAuthToken } from "../services/api"
 
 type LoginFormInputs = {
   email: string
@@ -17,11 +18,21 @@ export default function Login() {
   } = useForm<LoginFormInputs>()
 
   const onSubmit = async (data: LoginFormInputs) => {
-    // Substitua pela chamada real à sua API:
-    // const response = await api.post('/auth/login', { email: data.email, password: data.password })
-    console.log("Login:", data)
-    await new Promise((resolve) => setTimeout(resolve, 800))
-    navigate("/dashboard")
+    try {
+      const response = await authService.login({ email: data.email, password: data.password })
+      const token = response.data?.token
+      if (token) {
+        localStorage.setItem('token', token)
+        setAuthToken(token)
+      }
+      // persist role for UI decisions
+      const role = response.data?.role
+      if (role) localStorage.setItem('role', role)
+      navigate("/dashboard")
+    } catch (err: any) {
+      console.error('Login failed', err?.response || err)
+      alert(err?.response?.data?.error || 'Erro ao efetuar login')
+    }
   }
 
   return (
@@ -116,9 +127,9 @@ export default function Login() {
 
           <p className="text-center text-xs text-gray-500 mt-5">
             Não tem conta?{" "}
-            <a href="#" className="text-emerald-600 hover:text-emerald-700 font-semibold">
-              Solicitar acesso
-            </a>
+            <button onClick={() => navigate('/register')} className="text-emerald-600 hover:text-emerald-700 font-semibold">
+              Criar conta
+            </button>
           </p>
         </div>
       </div>

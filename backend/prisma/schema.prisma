@@ -11,3 +11,83 @@ generator client {
 datasource db {
   provider = "mysql"
 }
+
+// Define os tipos de usuários que podem logar no sistema
+enum Role {
+  DOCTOR
+  PATIENT
+  ADMIN
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String   // Aqui será armazenada a senha criptografada (ex: com bcrypt)
+  role      Role     @default(PATIENT) // Define se é paciente, médico ou admin
+  isActive  Boolean  @default(true)
+
+  // Relacionamentos Opcionais (1 para 1)
+  // Se o Role for DOCTOR, este perfil existirá
+  doctorProfile   Doctor?
+  // Se o Role for PATIENT, este perfil existirá
+  patientProfile  Patient?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Patient {
+  id          String   @id @default(uuid())
+  firstName   String
+  lastName    String
+  cpf         String   @unique
+  dateOfBirth DateTime
+  phone       String?
+
+  // Relacionamento 1:1 com a tabela User (Credenciais de Login)
+  userId      String   @unique
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Relacionamento 1:N com Laudos
+  reports     Report[] 
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Doctor {
+  id            String   @id @default(uuid())
+  firstName     String
+  lastName      String
+  specialty     String
+  licenseNumber String   @unique // CRM
+
+  // Relacionamento 1:1 com a tabela User (Credenciais de Login)
+  userId        String   @unique
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Relacionamento 1:N com Laudos
+  reports       Report[] 
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Report {
+  id          String   @id @default(uuid())
+  title       String
+  description String   @db.Text
+  diagnosis   String?
+  fileUrl     String?
+
+  // Foreign Keys (Chaves Estrangeiras)
+  patientId   String
+  doctorId    String
+
+  // Relacionamentos
+  patient     Patient  @relation(fields: [patientId], references: [id])
+  doctor      Doctor   @relation(fields: [doctorId], references: [id])
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}

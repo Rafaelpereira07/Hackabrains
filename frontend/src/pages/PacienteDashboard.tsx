@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import {
   Home,
@@ -14,6 +14,7 @@ import {
   Clock,
   Printer
 } from "lucide-react"
+import { dashboardService, setAuthToken } from "../services/api"
 
 // ── Dados Simulados do Paciente Logado ───────────────────────────────────────
 const patientData = {
@@ -49,7 +50,34 @@ function getInitials(name: string) {
 
 export default function PatientDashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [data, setData] = useState<any>(patientData)
   const navigate = useNavigate()
+
+  useEffect(() => {
+    const t = localStorage.getItem('token')
+    if (t) setAuthToken(t)
+
+    const fetchPatientDashboard = async () => {
+      try {
+        const res = await dashboardService.getPatientDashboard()
+        const resp = res.data
+        // map backend shape to local patientData
+        const mapped = {
+          id: resp?.profile?.id || patientData.id,
+          name: `${resp?.profile?.firstName || 'João'} ${resp?.profile?.lastName || 'Silva'}`,
+          age: patientData.age,
+          bloodType: patientData.bloodType,
+          activeTreatments: patientData.activeTreatments,
+          recentReports: (resp?.reportsHistory || []).map((r: any) => ({ id: r.id, title: r.title, date: r.createdAt || r.date, doctor: r.doctor ? `${r.doctor.firstName} ${r.doctor.lastName}` : r.doctor })),
+        }
+        setData(mapped)
+      } catch (err) {
+        // keep mock data on error
+      }
+    }
+
+    fetchPatientDashboard()
+  }, [])
 
   const navItems = [
     { icon: Home, label: "Início", active: true },
@@ -95,11 +123,11 @@ export default function PatientDashboard() {
         </div>
 
         <div className="p-6 pb-2 border-b border-gray-100 flex items-center gap-3">
-          <div className="w-12 h-12 bg-emerald-100 text-emerald-700 rounded-full flex items-center justify-center font-bold text-lg">
-            {getInitials(patientData.name)}
+            <div className="w-12 h-12 bg-emerald-100 text-emerald-700 rounded-full flex items-center justify-center font-bold text-lg">
+            {getInitials(data.name)}
           </div>
           <div>
-            <p className="font-semibold text-gray-900 leading-tight">{patientData.name}</p>
+            <p className="font-semibold text-gray-900 leading-tight">{data.name}</p>
             <p className="text-xs text-gray-500">Paciente</p>
           </div>
         </div>
@@ -159,7 +187,7 @@ export default function PatientDashboard() {
 
         {/* Welcome Section */}
         <div className="mb-8">
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Olá, {patientData.name.split(' ')[0]}!</h1>
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Olá, {data.name.split(' ')[0]}!</h1>
           <p className="text-gray-500 mt-1">Como você está se sentindo hoje?</p>
         </div>
 
@@ -181,7 +209,7 @@ export default function PatientDashboard() {
               </div>
               
               <div className="space-y-4">
-                {patientData.activeTreatments.map((treatment) => (
+                {data.activeTreatments.map((treatment) => (
                   <div key={treatment.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-gray-50 hover:bg-emerald-50/50 transition-colors rounded-xl border border-gray-100">
                     <div className="mb-3 sm:mb-0">
                       <p className="font-bold text-gray-900">{treatment.medication}</p>
@@ -210,7 +238,7 @@ export default function PatientDashboard() {
             <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
               <h2 className="text-lg font-bold text-gray-900 mb-4">Meus Laudos Recentes</h2>
               <div className="space-y-3">
-                {patientData.recentReports.map((report) => (
+                {data.recentReports.map((report) => (
                   <div key={report.id} className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-xl transition-colors border border-transparent hover:border-gray-100">
                     <div className="flex items-center gap-3">
                       <div className="bg-emerald-50 p-2 rounded-lg text-emerald-600">
@@ -241,11 +269,11 @@ export default function PatientDashboard() {
               <div className="grid grid-cols-2 gap-3 text-sm">
                 <div className="bg-white p-3 rounded-xl border border-emerald-100/50">
                   <p className="text-emerald-600 text-xs font-semibold mb-1">Idade</p>
-                  <p className="font-bold text-gray-900">{patientData.age} anos</p>
+                  <p className="font-bold text-gray-900">{data.age} anos</p>
                 </div>
                 <div className="bg-white p-3 rounded-xl border border-emerald-100/50">
                   <p className="text-emerald-600 text-xs font-semibold mb-1">Tipo Sanguíneo</p>
-                  <p className="font-bold text-gray-900">{patientData.bloodType}</p>
+                  <p className="font-bold text-gray-900">{data.bloodType}</p>
                 </div>
               </div>
             </div>

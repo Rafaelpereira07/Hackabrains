@@ -2,6 +2,7 @@ import React, { useState } from "react"
 import { useNavigate, useParams } from "react-router-dom"
 import { ChevronLeft, FileText, Edit3, Sparkles, X, Loader2, RefreshCw } from "lucide-react"
 import { useForm } from "react-hook-form"
+import { reportService, setAuthToken } from "../services/api"
 
 // ── Tipagens ──────────────────────────────────────────────────────────────────
 export type Patient = {
@@ -47,7 +48,7 @@ const mockReports: Record<string, Report[]> = {
 }
 
 // ── Simulação do Serviço de IA ─────────────────────────────────────────────────
-const generateClinicalReport = async (patient: Patient, reports: Report[], data: ConsultationForm): Promise<string> => {
+const generateClinicalReport = async (patient: Patient, data: ConsultationForm): Promise<string> => {
   return new Promise((resolve) => {
     setTimeout(() => {
       resolve(`
@@ -211,8 +212,35 @@ const PacientePage: React.FC = () => {
     setAiLoading(true)
     setAiError(null)
     try {
-      // Chama o mock de IA criado acima
-      const result = await generateClinicalReport(patient, reports, data)
+      // If we have a token, try to create a report via backend
+      const token = localStorage.getItem('token')
+      if (token) setAuthToken(token)
+
+      if (token) {
+        try {
+          const payload = {
+            title: `Laudo - ${new Date().toISOString().slice(0,10)}`,
+            description: data.queixa || 'Consulta registrada via app',
+            diagnosis: data.sintomas || '',
+            fileUrl: null,
+            patientId: patient.id,
+          }
+          const res = await reportService.createReport(payload)
+          // backend returns created report
+          const created = res.data?.report
+          if (created) {
+            setAiReport(`<h4>Laudo salvo</h4><p>ID: ${created.id}</p><p>${created.title}</p>`)
+            setShowConsultation(false)
+            return
+          }
+        } catch (err) {
+          // fallback to local mock if backend create fails
+          console.warn('report create failed, falling back to mock', err)
+        }
+      }
+
+      // Fallback: Chama o mock de IA criado acima
+      const result = await generateClinicalReport(patient, data)
       setAiReport(result)
       setShowConsultation(false)
     } catch (err) {

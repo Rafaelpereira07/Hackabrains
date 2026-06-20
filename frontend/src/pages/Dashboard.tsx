@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useForm } from "react-hook-form"
 import {
   LayoutDashboard,
@@ -19,6 +19,7 @@ import {
   Clock,
 } from "lucide-react"
 import { useNavigate } from "react-router-dom"
+import { dashboardService, setAuthToken } from "../services/api"
 
 // ── Tipagens Atualizadas ───────────────────────────────────────────────────────
 export type Patient = {
@@ -175,14 +176,14 @@ function AddPatientModal({ onClose, onAdd }: { onClose: () => void; onAdd: (p: P
 
 // ── Abas do Dashboard ─────────────────────────────────────────────────────────
 
-function OverviewTab({ patients, onView }: { patients: Patient[]; onView: (id: string) => void }) {
+function OverviewTab({ patients, onView, doctorName }: { patients: Patient[]; onView: (id: string) => void; doctorName?: string }) {
   const totalReports = Object.values(mockReports).flat().length
   const confirmed = scheduleItems.filter((s) => s.status === "Confirmado").length
 
   return (
     <div className="space-y-5">
       <div>
-        <h2 className="text-base font-semibold text-gray-900">Bem-vindo, Dr. Silva</h2>
+        <h2 className="text-base font-semibold text-gray-900">Bem-vindo, {doctorName ? `Dr. ${doctorName}` : 'Dr. Silva'}</h2>
         <p className="text-sm text-gray-500">Visão geral do atendimento clínico de hoje</p>
       </div>
 
@@ -353,10 +354,41 @@ function ReportsTab({ patients }: { patients: Patient[] }) {
 export default function Dashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [patients, setPatients] = useState<Patient[]>(initialPatients)
+  const [doctorName, setDoctorName] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<Tab>("dashboard")
   const [editingPatient, setEditingPatient] = useState<Patient | null>(null)
   const [addingPatient, setAddingPatient] = useState(false)
   const navigate = useNavigate()
+
+  useEffect(() => {
+    // attach token from localStorage if present
+    const t = localStorage.getItem('token')
+    if (t) setAuthToken(t)
+
+    // Fetch doctor dashboard if token is present
+    const fetchDashboard = async () => {
+      try {
+        const res = await dashboardService.getDoctorDashboard()
+        const data = res.data
+        // If attendedPatients returned, map into local Patient shape
+        if (data?.attendedPatients) {
+          const mapped = data.attendedPatients.map((p: any) => ({
+            id: p.id,
+            name: `${p.firstName} ${p.lastName}`,
+            age: 0,
+            phone: p.phone,
+          }))
+          setPatients(mapped)
+        }
+        // set doctor name if returned
+        if (data?.doctor?.firstName) setDoctorName(data.doctor.firstName)
+      } catch (err) {
+        // ignore silently — dashboard can work with mock data
+      }
+    }
+
+    fetchDashboard()
+  }, [])
 
   const navItems: { icon: React.ElementType; label: string; tab: Tab }[] = [
     { icon: LayoutDashboard, label: "Dashboard", tab: "dashboard" },
@@ -397,8 +429,8 @@ export default function Dashboard() {
           <span className="absolute top-1 right-1 w-1.5 h-1.5 bg-red-500 rounded-full" />
         </button>
         <div className="flex items-center gap-2 pl-3 border-l border-gray-200">
-          <div className="w-7 h-7 bg-emerald-100 rounded-full flex items-center justify-center text-emerald-700 text-xs font-medium">DS</div>
-          <span className="text-xs text-gray-600 hidden sm:block">Dr. Silva</span>
+          <div className="w-7 h-7 bg-emerald-100 rounded-full flex items-center justify-center text-emerald-700 text-xs font-medium">{getInitials(doctorName ?? 'Dr Silva')}</div>
+          <span className="text-xs text-gray-600 hidden sm:block">{doctorName ? `Dr. ${doctorName}` : 'Dr. Silva'}</span>
         </div>
       </header>
 
@@ -424,7 +456,7 @@ export default function Dashboard() {
         <main className={`flex-1 p-5 transition-all duration-300 ${sidebarOpen ? "ml-52" : "ml-14"}`}>
           <div className="max-w-4xl mx-auto">
             {/* ROTA DE PACIENTE CORRIGIDA DE /paciente/${id} PARA /patient/${id} */}
-            {activeTab === "dashboard" && <OverviewTab patients={patients} onView={(id) => navigate(`/patient/${id}`)} />}
+            {activeTab === "dashboard" && <OverviewTab patients={patients} onView={(id) => navigate(`/patient/${id}`)} doctorName={doctorName ?? undefined} />}
             {activeTab === "patients" && <PatientsTab patients={patients} onView={(id) => navigate(`/patient/${id}`)} onEdit={(p) => setEditingPatient(p)} onDelete={deletePatient} onAdd={() => setAddingPatient(true)} />}
             {activeTab === "schedule" && <ScheduleTab />}
             {activeTab === "reports" && <ReportsTab patients={patients} />}
